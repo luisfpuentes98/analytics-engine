@@ -58,4 +58,32 @@ with tab_query:
             
             duration_ms = (time.perf_counter() - start_time) * 1000
             st.success(f"⚡ Consulta completada en {duration_ms:.4f} ms")
-            st.info(f"💡 Ahorro de I/O: Se ignoraron {len(
+            st.info(f"💡 Ahorro de I/O: Se ignoraron {len(columnas_disponibles) - len(seleccion)} columnas.")
+            st.dataframe(query_results, use_container_width=True)
+
+# PASO C: TABLERO ANALÍTICO
+with tab_analytics:
+    st.header("Análisis de Gasto por Ciudad")
+    
+    if len(st.session_state.Datos_Usuario['ID']) > 0:
+        # Extraemos solo las dos columnas necesarias (Eficiencia de Columnas)
+        df_geo = pd.DataFrame(st.session_state.Datos_Geograficos)
+        df_metrics = pd.DataFrame(st.session_state.Datos_Metricas)
+        
+        # Combinamos solo lo necesario para el gráfico
+        df_plot = df_geo[['Ciudad']].copy()
+        df_plot['Gasto'] = df_metrics['Gasto_Publicitario']
+        
+        # Agrupación para el gráfico
+        resumen_ciudad = df_plot.groupby('Ciudad')['Gasto'].sum()
+        
+        # REQUERIMIENTO C: Gráfico de barras (Gasto_Publicitario por Ciudad)
+        st.bar_chart(resumen_ciudad)
+        
+        # REQUERIMIENTO C: Explicación técnica
+        st.markdown("""
+        > **🧠 Nota de Ingeniería:** Esta operación es ultra rápida porque el sistema **solo escanea las dos columnas implicadas** (`Ciudad` y `Gasto_Publicitario`), 
+        ignorando por completo el resto de la base de datos (Nombres, Emails, IPs, etc.). En un entorno de Big Data, esto evita procesar Terabytes de datos innecesarios.
+        """)
+    else:
+        st.info("Ingresa datos en el panel lateral para activar la analítica.")
