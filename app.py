@@ -4,9 +4,9 @@ import time
 
 # 1. Configuración General
 st.set_page_config(page_title="AnalyticsEngine", layout="wide")
-st.title("🏛️ AnalyticsEngine: Almacenamiento por Columnas")
+st.title("🏛️ AnalyticsEngine: Big Data Analytics")
 
-# Inicialización de Familias (Si no existen)
+# Inicialización de Familias de Columnas (Paso A)
 if 'Datos_Usuario' not in st.session_state:
     st.session_state.Datos_Usuario = {'ID': [], 'Nombre': [], 'Email': []}
 if 'Datos_Geograficos' not in st.session_state:
@@ -18,6 +18,7 @@ if 'Datos_Metricas' not in st.session_state:
 with st.sidebar:
     st.header("📥 Ingesta de Datos")
     with st.form("registro_form", clear_on_submit=True):
+        st.subheader("Datos de Registro")
         nombre = st.text_input("Nombre")
         email = st.text_input("Email")
         ciudad = st.text_input("Ciudad")
@@ -36,49 +37,25 @@ with st.sidebar:
             st.session_state.Datos_Metricas['ID'].append(new_id)
             st.session_state.Datos_Metricas['Gasto_Publicitario'].append(gasto)
             st.session_state.Datos_Metricas['Clics'].append(clics)
-            st.success(f"✅ Registro {new_id} guardado.")
+            st.success(f"✅ Registro {new_id} guardado con éxito.")
 
-# 3. SISTEMA DE PESTAÑAS (Paso B y C)
+# 3. SISTEMA DE PESTAÑAS
 tab_query, tab_analytics = st.tabs(["🔍 Consulta Selectiva", "📊 Tablero Analítico"])
 
 with tab_query:
-    st.header("Simulación de I/O por Columna")
-    
-    # Definimos todas las columnas disponibles (excepto ID que es llave)
+    st.header("Simulación de Lectura de Columnas")
     columnas_disponibles = ['Nombre', 'Email', 'Ciudad', 'Pais', 'Gasto_Publicitario', 'Clics']
+    seleccion = st.multiselect("Selecciona columnas para leer del disco:", columnas_disponibles)
     
-    # REQUERIMIENTO B: Multiselect para elegir columnas 
-    seleccion = st.multiselect("Selecciona las columnas que deseas leer del disco:", columnas_disponibles)
-    
-    if st.button("Ejecutar Consulta de Columnas"):
+    if st.button("Ejecutar Consulta"):
         if seleccion:
-            # Iniciamos cronómetro para medir eficiencia 
             start_time = time.perf_counter()
-            
-            # Simulamos el "escaneo" selectivo: solo tocamos los diccionarios necesarios
             query_results = pd.DataFrame({'ID': st.session_state.Datos_Usuario['ID']})
-            
             for col in seleccion:
-                # El sistema busca en qué "archivo" (familia) está la columna
-                if col in st.session_state.Datos_Usuario:
-                    query_results[col] = st.session_state.Datos_Usuario[col]
-                elif col in st.session_state.Datos_Geograficos:
-                    query_results[col] = st.session_state.Datos_Geograficos[col]
-                elif col in st.session_state.Datos_Metricas:
-                    query_results[col] = st.session_state.Datos_Metricas[col]
+                if col in st.session_state.Datos_Usuario: query_results[col] = st.session_state.Datos_Usuario[col]
+                elif col in st.session_state.Datos_Geograficos: query_results[col] = st.session_state.Datos_Geograficos[col]
+                elif col in st.session_state.Datos_Metricas: query_results[col] = st.session_state.Datos_Metricas[col]
             
-            end_time = time.perf_counter()
-            duration_ms = (end_time - start_time) * 1000
-            
-            # REQUERIMIENTO B: Mostrar tiempo e información de ahorro 
+            duration_ms = (time.perf_counter() - start_time) * 1000
             st.success(f"⚡ Consulta completada en {duration_ms:.4f} ms")
-            
-            columnas_ignoradas = len(columnas_disponibles) - len(seleccion)
-            st.info(f"💡 Ahorro de I/O: Se han ignorado {columnas_ignoradas} columnas del almacenamiento.")
-            
-            st.dataframe(query_results, use_container_width=True)
-        else:
-            st.warning("Selecciona al menos una columna para simular la lectura.")
-
-with tab_analytics:
-    st.info("Pestaña disponible en el siguiente paso (Paso C).")
+            st.info(f"💡 Ahorro de I/O: Se ignoraron {len(
